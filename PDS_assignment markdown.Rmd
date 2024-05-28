@@ -22,12 +22,12 @@ condition = rbind(conditions1,conditions2)
 conditions = subset(condition, DESCRIPTION %in% c("Suspected COVID-19","COVID-19"), drop = TRUE)
 ```
 
-Here we have four datasets, two of the contain patient demographic data and others contain infomation about patient conditions. First, we read all the data using the 'read.csv' function in R, we used this function because the data is in a csv format. Then the datasets having the same varible names were combined into a single dataset, these datasets were named as patients and conditions. 
+Here we have four datasets, two of the contain patient demographic data and others contain information about patient conditions. First, we read all the data using the 'read.csv' function in R, we used this function because the data is in a csv format. Then the datasets having the same variable names were combined into a single dataset, these datasets were named as patients and conditions. 
 
-Here we are analysing the distribution of covid patients across the counties, the patients data has infomation about the counties and the conditions have the description of the diagnosis. Since there were other information under the 'DESCRIPTION' variable but we are only interseted if the patients have suspected covid or not, we filtered the dataset with the description of diagnosis either covide-19 or not.
+Here we are analyzing the distribution of covid patients across the counties, the patients data has information about the counties and the conditions have the description of the diagnosis. Since there were other information under the 'DESCRIPTION' variable but we are only interseted if the patients have suspected covid or not, we filtered the dataset with the description of diagnosis either covid-19 or not.
 
 ```{r}
-county = subset(patients, select = c("Id","COUNTY"))
+county = subset(patients, select = c("Id","COUNTY","BIRTHDATE"))
 description = subset(conditions, select = c("PATIENT","DESCRIPTION"))
 merged = merge(county,description, by.x = "Id",by.y = "PATIENT", all = FALSE)
 head(merged,5)
@@ -40,20 +40,91 @@ covid = subset(merged, DESCRIPTION == "COVID-19", drop = TRUE)
 s_covid = unique(merged$Id[!(merged$Id %in% covid$Id)])
 s_covid = merged[!(merged$Id %in% covid$Id),]
 final = rbind(covid,s_covid)
-Q1 = subset(final,select = c("COUNTY","DESCRIPTION"))
+Q1 = subset(final,select = c("COUNTY","DESCRIPTION","BIRTHDATE"))
 head(Q1,5)
 ```
 
 
 ```{r}
-Q1_table  = table(Q1)
+Q1_table = table(Q1$COUNTY,Q1$DESCRIPTION)
 Q1_table
-Q1_table = rowSums(Q1_table)
 
-barplot(Q1_table)
+county_sum= rowSums(Q1_table)
+
+barplot(county_sum,col = 1:5)
+
 ```
 
 ```{r}
-hist(Q1_table)
+
 ```
 
+Now we have to find the distribution of covid patients across different age group, for this we have to categorise the ages into four different groups 0-18, 19-35, 36-50 and 51 +. Since we do not have the direct ages of patients, instead we calculated it from their date of birth using a function.
+
+```{r}
+age = subset(Q1, select = c("BIRTHDATE","DESCRIPTION"))
+```
+
+```{r}
+age_calculator = function(dob) {
+  today = Sys.Date()
+  birth.date = as.Date(dob)
+  
+  birth.year = as.numeric(format(birth.date, "%Y"))
+  current_year = as.numeric(format(today, "%Y"))
+  
+  age = current_year - birth.year
+  
+  bday = format(today, "%m-%d") < format(birth.date, "%m-%d")
+  age[bday] = age[bday] - 1
+  
+  return(age)
+}
+```
+
+```{r}
+
+age$AGE = age_calculator(age$BIRTHDATE)
+age = age %>%
+  mutate(Age.group = case_when(
+    AGE>=0 & AGE<=18 ~ "0-18",
+    AGE>=19& AGE<=35 ~ "19-35",
+    AGE>=36& AGE<=50 ~ "36-50",
+    AGE>=51 ~ "51+"
+  ))
+
+```
+
+
+```{r}
+#age = subset(age,select = c("Age.group"))
+
+table(age$Age.group)
+y= table(age$Age.group)
+```
+```{r}
+barplot(y,col = 4:8)
+```
+```{r}
+Q2 = subset(condition,select = c("PATIENT","DESCRIPTION"))
+final  
+
+Q2= Q2%>%
+  filter(PATIENT %in% final$Id)
+
+
+```
+
+```{r}
+symptom.count= Q2 %>%
+  count(DESCRIPTION)
+
+top.12 = symptom.count %>%
+  top_n(12)
+
+top.12 = top.12%>%
+  arrange(desc(n))
+
+top.12
+```
+ 
