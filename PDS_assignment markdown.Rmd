@@ -166,6 +166,8 @@ reshaped = reshaped%>%
 top.10.g = reshaped%>%
   slice(-1,-2)
 
+
+
 ```
 
 ```{r}
@@ -230,6 +232,12 @@ inf.fac2 = subset(Qn3.3, select = c("ENCOUNTERCLASS","AGE","GENDER","ZIP",
 **Question.4**
 
 ```{r}
+encounters1
+```
+
+
+
+```{r}
 #data1 
 
 Q4 = conditions1%>%
@@ -237,11 +245,19 @@ Q4 = conditions1%>%
 
 Q4$RECOVERY.STAT = ifelse(is.na(Q4$STOP)|Q4$STOP=="", "Not_recovered", "Recovered")
 
-Q4.1 = Q4[!duplicated(Q4$PATIENT),]
+Q4$RECOVERY.TIME = as.Date(Q4$STOP)- as.Date(Q4$START)
 
-Q4.2 = merge(Q4.1,patients1, by.x = "PATIENT", by.y = "Id",all = FALSE)
+Q4.1 = Q4%>%
+  filter(DESCRIPTION %in% final$DESCRIPTION)
 
+Q4.table = table(Q4.1$DESCRIPTION,Q4.1$RECOVERY.STAT)
+Q4.table
 
+barplot(Q4.table,beside = TRUE, col = c("skyblue","lightpink"))
+
+```
+
+```{r}
 
 ```
 
