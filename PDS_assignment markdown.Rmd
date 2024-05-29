@@ -9,6 +9,7 @@ output: word_document
 
 ```{r}
 library(ggplot2)
+library(tidyverse)
 library(dplyr)
 
 patients1 = read.csv("patientsPG1.csv")
@@ -126,5 +127,121 @@ top.12 = top.12%>%
   arrange(desc(n))
 
 top.12
+top.10 = top.12%>%
+  slice(-1,-2)
+top.10
 ```
  
+
+```{r}
+Q2.1 = patients%>%
+  filter(Id %in% Q2$PATIENT)
+
+```
+
+```{r}
+gender = subset(Q2.1,select = c("Id","GENDER"))
+
+gender.des = merge(gender,Q2, by.x = "Id",by.y = "PATIENT", all = FALSE)
+```
+
+
+```{r}
+symptom.gender = gender.des %>%
+  count(DESCRIPTION,GENDER)
+
+symptom.gender
+
+top.in.gender = symptom.gender%>%
+  group_by(GENDER)%>%
+  slice_max(order_by = n, n =12, with_ties = TRUE)
+  
+top.in.gender
+
+reshaped = spread(top.in.gender,GENDER,n)
+
+reshaped = reshaped%>%
+  arrange(desc(c(reshaped$F)))
+
+top.10.g = reshaped%>%
+  slice(-1,-2)
+
+```
+
+```{r}
+
+encounters1 = read.csv("encountersPG1.csv")
+encounters2 = read.csv("encountersPG2.csv")
+
+```
+
+```{r}
+#data 1
+final
+
+Q3 = encounters1%>%
+  filter(PATIENT %in% final$Id)
+
+Q3.1 = patients1%>%
+  filter(Id %in% Q3$PATIENT)
+
+Q3.2 = merge(Q3, Q3.1,by.x = "PATIENT",by.y = "Id",all = FALSE)
+
+Q3.3 = merge(Q3.2,age,by.x = "BIRTHDATE",by.y = "BIRTHDATE",all = FALSE)
+
+inf.fac = subset(Q3.3,select = c("ENCOUNTERCLASS","AGE","GENDER","ZIP",
+                                 "MARITAL","RACE","COUNTY","Age.group"))
+
+
+```
+
+```{r}
+gender.e = table(inf.fac$ENCOUNTERCLASS,inf.fac$GENDER)
+gender.e
+
+race.e = table(inf.fac$ENCOUNTERCLASS,inf.fac$RACE)
+race.e
+
+```
+
+
+```{r}
+barplot(race.e,beside = TRUE, col = 2:8)
+barplot(g.e,beside = TRUE,col = 5:12)
+```
+
+```{r}
+#data2 
+Qn3 = encounters2%>%
+  filter(PATIENT %in% final$Id)
+
+Qn3.1 = patients2%>%
+  filter(Id %in% Qn3$PATIENT)
+
+Qn3.2 = merge(Qn3,Qn3.1,by.x = "PATIENT",by.y = "Id",all = FALSE)
+
+Qn3.3 = merge(Qn3.2,age,by.x = "BIRTHDATE",by.y = "BIRTHDATE", all = FALSE)
+
+inf.fac2 = subset(Qn3.3, select = c("ENCOUNTERCLASS","AGE","GENDER","ZIP",
+                                 "MARITAL","RACE","COUNTY","Age.group"))
+
+```
+
+**Question.4**
+
+```{r}
+#data1 
+
+Q4 = conditions1%>%
+  filter(PATIENT %in% final$Id)
+
+Q4$RECOVERY.STAT = ifelse(is.na(Q4$STOP)|Q4$STOP=="", "Not_recovered", "Recovered")
+
+Q4.1 = Q4[!duplicated(Q4$PATIENT),]
+
+Q4.2 = merge(Q4.1,patients1, by.x = "PATIENT", by.y = "Id",all = FALSE)
+
+
+
+```
+
