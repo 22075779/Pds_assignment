@@ -39,8 +39,8 @@ Further, more filteration was carried out to make the dataset more specific, the
 ```{r}
 covid = subset(merged, DESCRIPTION == "COVID-19", drop = TRUE)
 s_covid = unique(merged$Id[!(merged$Id %in% covid$Id)])
-s_covid = merged[!(merged$Id %in% covid$Id),]
-final = rbind(covid,s_covid)
+sus_covid = merged[!(merged$Id %in% covid$Id),]
+final = rbind(covid,sus_covid)
 Q1 = subset(final,select = c("COUNTY","DESCRIPTION","BIRTHDATE"))
 head(Q1,5)
 ```
@@ -227,37 +227,99 @@ Qn3.3 = merge(Qn3.2,age,by.x = "BIRTHDATE",by.y = "BIRTHDATE", all = FALSE)
 inf.fac2 = subset(Qn3.3, select = c("ENCOUNTERCLASS","AGE","GENDER","ZIP",
                                  "MARITAL","RACE","COUNTY","Age.group"))
 
+table(inf.fac$ENCOUNTERCLASS)
 ```
 
 **Question.4**
 
+
 ```{r}
-encounters1
+#DATA 1
+covid.in.1 = subset(conditions1, DESCRIPTION == "COVID-19", drop = TRUE)
+suspected.in.1 = subset(conditions1,DESCRIPTION == "Suspected COVID-19"&
+                          !PATIENT %in% covid.in.1$PATIENT)
+Q4 = rbind(covid.in.1,suspected.in.1)
+
 ```
 
-
-
 ```{r}
-#data1 
-
-Q4 = conditions1%>%
-  filter(PATIENT %in% final$Id)
-
 Q4$RECOVERY.STAT = ifelse(is.na(Q4$STOP)|Q4$STOP=="", "Not_recovered", "Recovered")
-
 Q4$RECOVERY.TIME = as.Date(Q4$STOP)- as.Date(Q4$START)
 
-Q4.1 = Q4%>%
-  filter(DESCRIPTION %in% final$DESCRIPTION)
-
-Q4.table = table(Q4.1$DESCRIPTION,Q4.1$RECOVERY.STAT)
+Q4.table = table(Q4$DESCRIPTION,Q4$RECOVERY.STAT)
 Q4.table
 
-barplot(Q4.table,beside = TRUE, col = c("skyblue","lightpink"))
+barplot(Q4.table,beside = TRUE,col = c("skyblue","lightpink"))
+
+```
+```{r}
+patients1$AGE = age_calculator(patients1$BIRTHDATE)
+patients1 = patients1 %>%
+  mutate(AGE.GROUP = case_when(
+    AGE>=0 & AGE<=18 ~ "0-18",
+    AGE>=19& AGE<=35 ~ "19-35",
+    AGE>=36& AGE<=50 ~ "36-50",
+    AGE>=51 ~ "51+"
+  ))
+
+Q4.1 = subset(patients1,select = c("Id","AGE","AGE.GROUP","GENDER","ZIP"))
+
+Q4.2 = Q4.1%>%
+  filter(Id %in% Q4$PATIENT)
+
+Q4.3 = merge(Q4,Q4.2,by.x = "PATIENT",by.y = "Id",all = FALSE)
+
+Q4.final = subset(Q4.3,select = c("PATIENT","GENDER","AGE","AGE.GROUP",
+                              "DESCRIPTION","ZIP","RECOVERY.STAT","RECOVERY.TIME"))
+```
+
+
+```{r}
+m =lm(AGE~RECOVERY.TIME,data = Q4.final)
+m
+summary(m)
 
 ```
 
 ```{r}
+#DATA 2
 
+covid.in.2 = subset(conditions2, DESCRIPTION == "COVID-19", drop = TRUE)
+suspected.in.2 = subset(conditions2,DESCRIPTION == "Suspected COVID-19"&
+                          !PATIENT %in% covid.in.2$PATIENT)
+Qn4 = rbind(covid.in.2,suspected.in.2)
+
+```
+
+```{r}
+Qn4$RECOVERY.STAT = ifelse(is.na(Qn4$STOP)|Qn4$STOP=="", "Not_recovered", "Recovered")
+Qn4$RECOVERY.TIME = as.Date(Qn4$STOP)- as.Date(Qn4$START)
+
+Qn4.table = table(Qn4$DESCRIPTION,Qn4$RECOVERY.STAT)
+Qn4.table
+```
+```{r}
+patients2$AGE = age_calculator(patients2$BIRTHDATE)
+patients2 = patients2 %>%
+  mutate(AGE.GROUP = case_when(
+    AGE>=0 & AGE<=18 ~ "0-18",
+    AGE>=19& AGE<=35 ~ "19-35",
+    AGE>=36& AGE<=50 ~ "36-50",
+    AGE>=51 ~ "51+"
+  ))
+
+Qn4.1 = subset(patients2,select = c("Id","AGE","AGE.GROUP","GENDER","ZIP"))
+
+Qn4.2 = Qn4.1%>%
+  filter(Id %in% Qn4$PATIENT)
+
+Qn4.3 = merge(Qn4,Qn4.2,by.x = "PATIENT",by.y = "Id",all = FALSE)
+
+Qn4.final = subset(Qn4.3,select = c("PATIENT","GENDER","AGE","AGE.GROUP",
+                              "DESCRIPTION","ZIP","RECOVERY.STAT","RECOVERY.TIME"))
+```
+
+```{r}
+table(Qn4.final$RECOVERY.STAT,Qn4.final$DESCRIPTION)
 ```
 
