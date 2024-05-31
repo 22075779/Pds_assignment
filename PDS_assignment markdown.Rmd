@@ -178,56 +178,78 @@ encounters2 = read.csv("encountersPG2.csv")
 ```
 
 ```{r}
-#data 1
-final
+#DATA_1
 
 Q3 = encounters1%>%
-  filter(PATIENT %in% final$Id)
+  filter(PATIENT %in% Q4$PATIENT)
+Q3 = subset(Q3, select = c("PATIENT","ENCOUNTERCLASS"))
+Q3 = Q3[Q3$ENCOUNTERCLASS %in% c("ambulatory","emergency","inpatient","urgentcare"),]
+table(Q3$ENCOUNTERCLASS)
 
-Q3.1 = patients1%>%
-  filter(Id %in% Q3$PATIENT)
+Q3.1 = subset(patients1, select = c("Id","GENDER","RACE"))
 
-Q3.2 = merge(Q3, Q3.1,by.x = "PATIENT",by.y = "Id",all = FALSE)
+Q3.2 = merge(Q3,Q3.1,by.x = "PATIENT", by.y = "Id",all = FALSE)
 
-Q3.3 = merge(Q3.2,age,by.x = "BIRTHDATE",by.y = "BIRTHDATE",all = FALSE)
+gender.encounter = table(Q3.2$ENCOUNTERCLASS,Q3.2$GENDER)
+gender.encounter
 
-inf.fac = subset(Q3.3,select = c("ENCOUNTERCLASS","AGE","GENDER","ZIP",
-                                 "MARITAL","RACE","COUNTY","Age.group"))
+ggplot(Q3.2, aes(x = ENCOUNTERCLASS, fill = GENDER)) +
+  geom_bar(position = position_dodge(width = 0.9), color = "black") +
+  labs(title = "ENCOUNTERCLASS BETWEEN GENDERS") + 
+  theme_bw()+ scale_fill_manual(values = c("lightpink","skyblue"))
 
+
+prop.gender.1 = prop.table(gender.encounter,margin = 1)*100
+prop.gender.1
+
+race.encounter = table(Q3.2$ENCOUNTERCLASS,Q3.2$RACE)
+race.encounter
+
+ggplot(Q3.2, aes(x = ENCOUNTERCLASS, fill = RACE)) +
+  geom_bar(position = position_dodge(width = 0.9), color = "black") +
+  labs(title = "ENCOUNTERCLASS BETWEEN RACE") + 
+  theme_bw()
+
+
+prop.race.1 = prop.table(race.encounter,margin = 1)*100
+prop.race.1
 
 ```
-
 ```{r}
-gender.e = table(inf.fac$ENCOUNTERCLASS,inf.fac$GENDER)
-gender.e
-
-race.e = table(inf.fac$ENCOUNTERCLASS,inf.fac$RACE)
-race.e
-
-```
-
-
-```{r}
-barplot(race.e,beside = TRUE, col = 2:8)
-barplot(g.e,beside = TRUE,col = 5:12)
-```
-
-```{r}
-#data2 
+#DATA 2
 Qn3 = encounters2%>%
-  filter(PATIENT %in% final$Id)
+  filter(PATIENT %in% Qn4$PATIENT)
+Qn3 = subset(Qn3, select = c("PATIENT","ENCOUNTERCLASS"))
+Qn3 = Qn3[Qn3$ENCOUNTERCLASS %in% c("ambulatory","emergency","inpatient","urgentcare"),]
+table(Qn3$ENCOUNTERCLASS)
 
-Qn3.1 = patients2%>%
-  filter(Id %in% Qn3$PATIENT)
+Qn3.1 = subset(patients2, select = c("Id","GENDER","RACE"))
 
-Qn3.2 = merge(Qn3,Qn3.1,by.x = "PATIENT",by.y = "Id",all = FALSE)
+Qn3.2 = merge(Qn3,Qn3.1,by.x = "PATIENT", by.y = "Id",all = FALSE)
 
-Qn3.3 = merge(Qn3.2,age,by.x = "BIRTHDATE",by.y = "BIRTHDATE", all = FALSE)
+gender.encounter2 = table(Qn3.2$ENCOUNTERCLASS,Qn3.2$GENDER)
+gender.encounter2
 
-inf.fac2 = subset(Qn3.3, select = c("ENCOUNTERCLASS","AGE","GENDER","ZIP",
-                                 "MARITAL","RACE","COUNTY","Age.group"))
+ggplot(Qn3.2, aes(x = ENCOUNTERCLASS, fill = GENDER)) +
+  geom_bar(position = position_dodge(width = 0.9), color = "black") +
+  labs(title = "ENCOUNTERCLASS BETWEEN GENDERS") + 
+  theme_bw()+ scale_fill_manual(values = c("lightpink","skyblue"))
 
-table(inf.fac$ENCOUNTERCLASS)
+prop.gedner.2 = prop.table(gender.encounter2,margin = 1)*100
+prop.gedner.2
+
+race.encounter2 = table(Qn3.2$ENCOUNTERCLASS,Qn3.2$RACE)
+race.encounter2
+ggplot(Qn3.2, aes(x = ENCOUNTERCLASS, fill = RACE)) +
+  geom_bar(position = position_dodge(width = 0.9), color = "black") +
+  labs(title = "ENCOUNTERCLASS BETWEEN GENDERS") + 
+  theme_bw()
+
+prop.race.2 = prop.table(race.encounter2,margin = 1)*100
+prop.race.2
+
+
+
 ```
 
 **Question.4**
@@ -320,6 +342,6 @@ Qn4.final = subset(Qn4.3,select = c("PATIENT","GENDER","AGE","AGE.GROUP",
 ```
 
 ```{r}
-table(Qn4.final$RECOVERY.STAT,Qn4.final$DESCRIPTION)
+table(Qn4.final$DESCRIPTION,Qn4.final$RECOVERY.STAT)
 ```
 
