@@ -262,6 +262,8 @@ suspected.in.1 = subset(conditions1,DESCRIPTION == "Suspected COVID-19"&
                           !PATIENT %in% covid.in.1$PATIENT)
 Q4 = rbind(covid.in.1,suspected.in.1)
 
+
+
 ```
 
 ```{r}
@@ -297,9 +299,29 @@ Q4.final = subset(Q4.3,select = c("PATIENT","GENDER","AGE","AGE.GROUP",
 
 
 ```{r}
-m =lm(AGE~RECOVERY.TIME,data = Q4.final)
-m
-summary(m)
+
+REC.id.1 = subset(Q4, select = c("PATIENT","RECOVERY.STAT"))
+SYM.1 = subset(conditions1,select = c("PATIENT","DESCRIPTION"))
+
+SYM.1 = SYM.1%>%
+  filter(PATIENT %in% REC.id.1$PATIENT)
+
+REC.SYM.1 = merge(REC.id.1,SYM.1,by.x = "PATIENT","PATIENT",all = FALSE)
+
+REC.SYM.table.1 = as.data.frame(table(REC.SYM.1$DESCRIPTION,REC.SYM.1$RECOVERY.STAT))
+
+REC.SYM.table.1 = REC.SYM.table.1%>%
+  arrange(desc(Freq))%>%
+  slice(-1,-2)
+
+REC.SYM.table.1 =REC.SYM.table.1%>%
+  slice(-42,-43)
+
+names(REC.SYM.table.1) = c("SYMPTOMS","RECOVERY.STAT","FREQUENCY.OF.SYMPTOMS")
+
+REC.SYM.FREQ.1 = subset(REC.SYM.table.1, RECOVERY.STAT == "Recovered" )
+NOT.REC.FREQ.1 = subset(REC.SYM.table.1, RECOVERY.STAT == "Not_recovered" )
+
 
 ```
 
@@ -342,6 +364,26 @@ Qn4.final = subset(Qn4.3,select = c("PATIENT","GENDER","AGE","AGE.GROUP",
 ```
 
 ```{r}
-table(Qn4.final$DESCRIPTION,Qn4.final$RECOVERY.STAT)
+REC.id.2 = subset(Qn4, select = c("PATIENT","RECOVERY.STAT"))
+SYM.2 = subset(conditions2,select = c("PATIENT","DESCRIPTION"))
+
+SYM.2 = SYM.2%>%
+  filter(PATIENT %in% REC.id.2$PATIENT)
+
+REC.SYM.2 = merge(REC.id.2,SYM.2,by.x = "PATIENT","PATIENT",all = FALSE)
+
+REC.SYM.table.2 = as.data.frame(table(REC.SYM.2$DESCRIPTION,REC.SYM.2$RECOVERY.STAT))
+
+REC.SYM.table.2 = REC.SYM.table.2%>%
+  arrange(desc(Freq))%>%
+  slice(-1,-2)
+
+REC.SYM.table.2 =REC.SYM.table.2%>%
+  slice(-42,-47)
+
+names(REC.SYM.table.2) = c("SYMPTOMS","RECOVERY.STAT","FREQUENCY.OF.SYMPTOMS")
+
+REC.SYM.FREQ.2 = subset(REC.SYM.table.2, RECOVERY.STAT == "Recovered" )
+NOT.REC.FREQ.2 = subset(REC.SYM.table.2, RECOVERY.STAT == "Not_recovered" )
 ```
 
