@@ -5,14 +5,20 @@ date: "2024-05-28"
 output: word_document
 ---
 
-**Question 1.Write the code to analyse the distribution of COVID patients (confirmed or suspected) across countries. Write the code to investigate the distribution of the patients across age groups (e.g., 0-18, 19-35,36-50, 51+). Visualise both the findings using the histogram. Explain your findings.**
+To start with the analysis, first the necessary libraries were called using the library function in R, there are mainly three libraries used throughout our analysis, ggplot, tidyverse and dplyr.  
 
 ```{r}
 library(ggplot2)
 library(tidyverse)
 library(dplyr)
+library(knitr)
+```
 
-patients1 = read.csv("patientsPG1.csv")
+**Question 1.Write the code to analyse the distribution of COVID patients (confirmed or suspected) across countries. Write the code to investigate the distribution of the patients across age groups (e.g., 0-18, 19-35,36-50, 51+). Visualise both the findings using the histogram. Explain your findings.**
+
+```{r}
+
+patients1 = read.csv("patientsPG1.csv") #to load the csv files
 patients2 = read.csv("patientsPG2.csv")
 patients = rbind(patients1,patients2)
 ```
@@ -20,12 +26,14 @@ patients = rbind(patients1,patients2)
 conditions1 = read.csv("ConditionsPG1.csv")
 conditions2 = read.csv("ConditionsPG2.csv")
 condition = rbind(conditions1,conditions2)
-conditions = subset(condition, DESCRIPTION %in% c("Suspected COVID-19","COVID-19"), drop = TRUE)
+conditions = subset(condition, DESCRIPTION %in% c("Suspected COVID-19","COVID-19"), drop = TRUE)#subsetting dataset based on the number of covid patients
 ```
 
-Here we have four datasets, two of the contain patient demographic data and others contain information about patient conditions. First, we read all the data using the 'read.csv' function in R, we used this function because the data is in a csv format. Then the datasets having the same variable names were combined into a single dataset, these datasets were named as patients and conditions. 
+As the task does not specifically mention to investigate the distribution in a particualar dataset, we have used the whole datasets here. 
 
-Here we are analyzing the distribution of covid patients across the counties, the patients data has information about the counties and the conditions have the description of the diagnosis. Since there were other information under the 'DESCRIPTION' variable but we are only interseted if the patients have suspected covid or not, we filtered the dataset with the description of diagnosis either covid-19 or not.
+Here we have four datasets, two of them contains patient demographic data and others contain  information about patient conditions. First, we read all the data using the 'read.csv' function in R, we used this function because the data is in a csv format. Then the dataset with demographic information was combined into one and the ones describing conditions into another single one.
+
+First we are analyzing the distribution of covid patients across the counties, the patients data has information about the counties and the conditions have the description of the diagnosis. Since there were other information under the 'DESCRIPTION' variable but we are only interested if the patients have suspected covid or not, we filtered the dataset with the description of diagnosis either covid-19 or not.
 
 ```{r}
 county = subset(patients, select = c("Id","COUNTY","BIRTHDATE"))
@@ -34,7 +42,7 @@ merged = merge(county,description, by.x = "Id",by.y = "PATIENT", all = FALSE)
 head(merged,5)
 ```
 
-Further, more filteration was carried out to make the dataset more specific, the varibales which are relevant in both the datasets were filtered and merged in a manner with the same ids. The Ids which were present in both the dataset was selected with their respective county names and had covid-19 or just suspection. 
+From the patients dataset, as we do not need all the information, it was subsetted with information like Id, county name and birthdate because we need birthdates later for analysis. We also made an other set with just the patient id and description from the conditions and then the description of the diagnosis and county names were combined on the basis of patient id so that we can get the patients their respective counties and if they had covid or not. 
 
 ```{r}
 covid = subset(merged, DESCRIPTION == "COVID-19", drop = TRUE)
@@ -42,22 +50,42 @@ s_covid = unique(merged$Id[!(merged$Id %in% covid$Id)])
 sus_covid = merged[!(merged$Id %in% covid$Id),]
 final = rbind(covid,sus_covid)
 Q1 = subset(final,select = c("COUNTY","DESCRIPTION","BIRTHDATE"))
-head(Q1,5)
+
 ```
 
+Now, we had to do some additional filtering, all the patients were suspected for covid first, but some of them did not turn covid positive. In the dataset, the ids are repeated for those who were suspected first and had covid later, so we had to remove these duplicate ids. First we took all the ids which had covid, this means these ids are repeated any way, then we filter the suspected covid ids then later further we filtered the unique suspected ids and finally binded back the unique ids together. 
 
 ```{r}
 Q1_table = table(Q1$COUNTY,Q1$DESCRIPTION)
-Q1_table
+Q1.data = as.data.frame(Q1_table)
+names(Q1.data) = c("COUNTY","DESCRIPTION","NO.OF.PEOPLE")
+Q1.data  = Q1.data%>%
+  arrange(desc(NO.OF.PEOPLE))
 
-county_sum= rowSums(Q1_table)
-
-barplot(county_sum,col = 1:5)
+ggplot(Q1.data, aes(x = COUNTY, y = NO.OF.PEOPLE, fill = DESCRIPTION)) +
+  geom_bar(stat = "identity",position = position_dodge(0.9),color ="darkgrey") +
+  labs(title = "Suspected and Confirmed cases by Counties",x = "COUNTY",
+       y = "No.of.People",
+       fill = "Description") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
 ```
 
 ```{r}
+co.county = subset(Q1.data, DESCRIPTION == "COVID-19")
+kable(co.county, caption = "COVID-19 patients across counties")
+hist(co.county$NO.OF.PEOPLE, main = "Distribution of people with Covid-19 across counties",
+     xlab = "No.of.People", col = "skyblue",border = "white")
 
+```
+
+
+```{r}
+sus.county = subset(Q1.data, DESCRIPTION == "Suspected COVID-19")
+kable(sus.county, caption = "Suspected COVID-19 patients across counties")
+hist(sus.county$NO.OF.PEOPLE, main = "Distribution of people with Suspected Covid-19 across counties",
+     xlab = "No.of.People", col = "cyan3",border = "white")
 ```
 
 Now we have to find the distribution of covid patients across different age group, for this we have to categorise the ages into four different groups 0-18, 19-35, 36-50 and 51 +. Since we do not have the direct ages of patients, instead we calculated it from their date of birth using a function.
@@ -99,13 +127,36 @@ age = age %>%
 
 ```{r}
 #age = subset(age,select = c("Age.group"))
+age.table = table(age$DESCRIPTION,age$Age.group)
+age.data = as.data.frame(age.table)
+names(age.data) = c("DESCRIPTION","AGE.GROUP","NO.OF.PEOPLE")
+age.data  = age.data%>%
+  arrange(desc(NO.OF.PEOPLE))
 
-table(age$Age.group)
-y= table(age$Age.group)
+ggplot(age.data, aes(x = AGE.GROUP, y = NO.OF.PEOPLE, fill = DESCRIPTION)) +
+  geom_bar(stat = "identity",position = position_dodge(0.9),colour= "darkgrey") +
+  labs(title = "Suspected and Confirmed cases by AGE GROUP",x = "Age Groups",
+       y = "No.of.People",
+       fill = "Description") +
+  theme_bw()+
+  scale_fill_manual(values = c("aquamarine2","darkcyan"))
+  
 ```
 ```{r}
-barplot(y,col = 4:8)
+co.age = subset(age.data, DESCRIPTION == "COVID-19")
+kable(co.age, caption = "COVID-19 patients across different age groups")
+hist(co.age$NO.OF.PEOPLE, main = "Distribution of people with Covid-19 across different age groups",
+     xlab = "No.of.People", col = "aquamarine4",border = "white")
 ```
+```{r}
+sus.age = subset(age.data, DESCRIPTION == "Suspected COVID-19")
+kable(co.age, caption = "Suspected COVID-19 patients across different age groups")
+hist(co.age$NO.OF.PEOPLE, main = "Distribution of people who suspected Covid-19 in different age groups",
+     xlab = "No.of.People", col = "cyan3",border = "white")
+```
+
+
+
 ```{r}
 Q2 = subset(condition,select = c("PATIENT","DESCRIPTION"))
 final  
@@ -249,7 +300,6 @@ prop.race.2 = prop.table(race.encounter2,margin = 1)*100
 prop.race.2
 
 
-
 ```
 
 **Question.4**
@@ -261,7 +311,6 @@ covid.in.1 = subset(conditions1, DESCRIPTION == "COVID-19", drop = TRUE)
 suspected.in.1 = subset(conditions1,DESCRIPTION == "Suspected COVID-19"&
                           !PATIENT %in% covid.in.1$PATIENT)
 Q4 = rbind(covid.in.1,suspected.in.1)
-
 
 
 ```
