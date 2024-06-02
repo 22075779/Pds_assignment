@@ -5,7 +5,7 @@ date: "2024-05-28"
 output: word_document
 ---
 
-To start with the analysis, first the necessary libraries were called using the library function in R, there are mainly three libraries used throughout our analysis, ggplot, tidyverse and dplyr.  
+To start with the analysis, first the necessary libraries were called using the library function in R, there are mainly three libraries used throughout our analysis, ggplot, tidyverse and dplyr.
 
 ```{r}
 library(ggplot2)
@@ -22,6 +22,7 @@ patients1 = read.csv("patientsPG1.csv") #to load the csv files
 patients2 = read.csv("patientsPG2.csv")
 patients = rbind(patients1,patients2)
 ```
+
 ```{r}
 conditions1 = read.csv("ConditionsPG1.csv")
 conditions2 = read.csv("ConditionsPG2.csv")
@@ -29,9 +30,9 @@ condition = rbind(conditions1,conditions2)
 conditions = subset(condition, DESCRIPTION %in% c("Suspected COVID-19","COVID-19"), drop = TRUE)#subsetting dataset based on the number of covid patients
 ```
 
-As the task does not specifically mention to investigate the distribution in a particualar dataset, we have used the whole datasets here. 
+As the task does not specifically mention to investigate the distribution in a particualar dataset, we have used the whole datasets here.
 
-Here we have four datasets, two of them contains patient demographic data and others contain  information about patient conditions. First, we read all the data using the 'read.csv' function in R, we used this function because the data is in a csv format. Then the dataset with demographic information was combined into one and the ones describing conditions into another single one.
+Here we have four datasets, two of them contains patient demographic data and others contain information about patient conditions. First, we read all the data using the 'read.csv' function in R, we used this function because the data is in a csv format. Then the dataset with demographic information was combined into one and the ones describing conditions into another single one.
 
 First we are analyzing the distribution of covid patients across the counties, the patients data has information about the counties and the conditions have the description of the diagnosis. Since there were other information under the 'DESCRIPTION' variable but we are only interested if the patients have suspected covid or not, we filtered the dataset with the description of diagnosis either covid-19 or not.
 
@@ -42,7 +43,7 @@ merged = merge(county,description, by.x = "Id",by.y = "PATIENT", all = FALSE)
 head(merged,5)
 ```
 
-From the patients dataset, as we do not need all the information, it was subsetted with information like Id, county name and birthdate because we need birthdates later for analysis. We also made an other set with just the patient id and description from the conditions and then the description of the diagnosis and county names were combined on the basis of patient id so that we can get the patients their respective counties and if they had covid or not. 
+From the patients dataset, as we do not need all the information, it was subsetted with information like Id, county name and birthdate because we need birthdates later for analysis. We also made an other set with just the patient id and description from the conditions and then the description of the diagnosis and county names were combined on the basis of patient id so that we can get the patients their respective counties and if they had covid or not.
 
 ```{r}
 covid = subset(merged, DESCRIPTION == "COVID-19", drop = TRUE)
@@ -53,7 +54,7 @@ Q1 = subset(final,select = c("COUNTY","DESCRIPTION","BIRTHDATE"))
 
 ```
 
-Now, we had to do some additional filtering, all the patients were suspected for covid first, but some of them did not turn covid positive. In the dataset, the ids are repeated for those who were suspected first and had covid later, so we had to remove these duplicate ids. First we took all the ids which had covid, this means these ids are repeated any way, then we filter the suspected covid ids then later further we filtered the unique suspected ids and finally binded back the unique ids together. 
+Now, we had to do some additional filtering, all the patients were suspected for covid first, but some of them did not turn covid positive. In the dataset, the ids are repeated for those who were suspected first and had covid later, so we had to remove these duplicate ids. First we took all the ids which had covid, this means these ids are repeated any way, then we filter the suspected covid ids then later further we filtered the unique suspected ids and finally binded back the unique ids together.
 
 ```{r}
 Q1_table = table(Q1$COUNTY,Q1$DESCRIPTION)
@@ -72,6 +73,10 @@ ggplot(Q1.data, aes(x = COUNTY, y = NO.OF.PEOPLE, fill = DESCRIPTION)) +
 
 ```
 
+The above barplot is a visualisation of covid patients and suspected covid patients across different counties. Each bar represents the count of patients in each county. The number people who had just suspection is very less compared to the number of covid patients. The middlesex county with a number of 2082 had the highest number of covid confirmed covid patients whereas, the least number of cases were observed in Nantucket county with just 14 confirmed cases.
+
+People who were suspected but did not get affected was also highest in Middlesex with a number of 53 whereas in Dukes, every person who were suspected later turned covid positive.
+
 ```{r}
 co.county = subset(Q1.data, DESCRIPTION == "COVID-19")
 kable(co.county, caption = "COVID-19 patients across counties")
@@ -80,6 +85,7 @@ hist(co.county$NO.OF.PEOPLE, main = "Distribution of people with Covid-19 across
 
 ```
 
+A table with the number of covid patients was created using the 'kable' function in R and the distribution of covid patients across counties were plotted using a histogram. There was only one county with number of patients between 2000 and 2500, six counties had 0-500 number of confirmed cases and the remaining counties had numbers between 500 to 1500.
 
 ```{r}
 sus.county = subset(Q1.data, DESCRIPTION == "Suspected COVID-19")
@@ -87,6 +93,8 @@ kable(sus.county, caption = "Suspected COVID-19 patients across counties")
 hist(sus.county$NO.OF.PEOPLE, main = "Distribution of people with Suspected Covid-19 across counties",
      xlab = "No.of.People", col = "cyan3",border = "white")
 ```
+
+The same process was carried out with the people who were just suspected. Most of the counties have a very lower number of people who were just suspected. As low these numbers across the counties means that most of them turned covid positive later, the higher number means there are more people who were just suspected but actually did not had covid.
 
 Now we have to find the distribution of covid patients across different age group, for this we have to categorise the ages into four different groups 0-18, 19-35, 36-50 and 51 +. Since we do not have the direct ages of patients, instead we calculated it from their date of birth using a function.
 
@@ -111,6 +119,8 @@ age_calculator = function(dob) {
 }
 ```
 
+We created a function called 'age calculator' which returns the ages of patients if they were alive today. We did not stress much into the exact age of patients because we were focusing on their age groups. Some people were above 110 years old as per the calculations but we grouped them all into one category called 51+. Based on the age groups, we had four categories 0-18, 19-35, 36-50 and above 51.
+
 ```{r}
 
 age$AGE = age_calculator(age$BIRTHDATE)
@@ -123,7 +133,6 @@ age = age %>%
   ))
 
 ```
-
 
 ```{r}
 #age = subset(age,select = c("Age.group"))
@@ -142,30 +151,34 @@ ggplot(age.data, aes(x = AGE.GROUP, y = NO.OF.PEOPLE, fill = DESCRIPTION)) +
   scale_fill_manual(values = c("aquamarine2","darkcyan"))
   
 ```
+
+The above barplot shows the number of people belonging two different age groups who had covid and just suspision. Most of the reported cases were above 51 years old and people who were below 18 were least affected. Even though the most affected category was 51+, the most escaped numbers are also from the same, this might have occured because of the higher number.
+
 ```{r}
 co.age = subset(age.data, DESCRIPTION == "COVID-19")
 kable(co.age, caption = "COVID-19 patients across different age groups")
 hist(co.age$NO.OF.PEOPLE, main = "Distribution of people with Covid-19 across different age groups",
      xlab = "No.of.People", col = "aquamarine4",border = "white")
 ```
+
 ```{r}
 sus.age = subset(age.data, DESCRIPTION == "Suspected COVID-19")
-kable(co.age, caption = "Suspected COVID-19 patients across different age groups")
-hist(co.age$NO.OF.PEOPLE, main = "Distribution of people who suspected Covid-19 in different age groups",
+kable(sus.age, caption = "Suspected COVID-19 patients across different age groups")
+hist(sus.age$NO.OF.PEOPLE, main = "Distribution of people who suspected Covid-19 in different age groups",
      xlab = "No.of.People", col = "cyan3",border = "white")
 ```
 
-
+**Question.2 Filter those patients in the dataset that have contracted COVID-19 or Suspected COVID-19; what are the top 10 most common conditions (symptoms) related to the patients? Do the conditions differ between genders? Provide a table to rank the top 10 conditions for male and female patients separately. Elaborate on the findings.**
 
 ```{r}
 Q2 = subset(condition,select = c("PATIENT","DESCRIPTION"))
-final  
-
 Q2= Q2%>%
   filter(PATIENT %in% final$Id)
-
-
 ```
+
+To find whether the symptoms related to the patients differ by gender, first we filtered the conditions and the ids from the condition datasets. Even here, we are using both datasets condition1 and condition2 because it is not specified to analyse a specific dataset.
+
+After taking the necessary information, it was further filtered on the basis of ids which were contracted covid or suspected.
 
 ```{r}
 symptom.count= Q2 %>%
@@ -176,39 +189,31 @@ top.12 = symptom.count %>%
 
 top.12 = top.12%>%
   arrange(desc(n))
-
-top.12
 top.10 = top.12%>%
   slice(-1,-2)
 top.10
 ```
- 
+
+Then we counted the number of all symptoms and took the top 12 symptoms associated with the patients. Out of the top 12, the most occuring were covid-19 and suspected covid-19 but we did not need those two, so we removed those two numbers and created a table with the top 10 common symptoms as shown above. Fever and cough are the most common symptoms followed by taste loss, fatigue and so on.
 
 ```{r}
 Q2.1 = patients%>%
   filter(Id %in% Q2$PATIENT)
 
-```
-
-```{r}
 gender = subset(Q2.1,select = c("Id","GENDER"))
-
 gender.des = merge(gender,Q2, by.x = "Id",by.y = "PATIENT", all = FALSE)
 ```
 
+Now we have the common symptoms but we don't know if they differ by gender, for that first we filtered the ids associated with the genders from the patients dataset and matched these ids and the ids of patients who have covid resulting in a new a data frame with Id, gender and symptoms of the covid patients.
 
 ```{r}
 symptom.gender = gender.des %>%
   count(DESCRIPTION,GENDER)
 
-symptom.gender
-
 top.in.gender = symptom.gender%>%
   group_by(GENDER)%>%
   slice_max(order_by = n, n =12, with_ties = TRUE)
   
-top.in.gender
-
 reshaped = spread(top.in.gender,GENDER,n)
 
 reshaped = reshaped%>%
@@ -217,20 +222,68 @@ reshaped = reshaped%>%
 top.10.g = reshaped%>%
   slice(-1,-2)
 
+```
 
+As all the symptoms were not relevant for the analysis, we took the top 10 symptoms associated with males and females.
 
+```{r}
+male.10.symptom = subset(top.10.g,select = c("DESCRIPTION","M"))
+male.10.symptom = na.omit(male.10.symptom)
+kable(male.10.symptom,caption = "Top 10 symptoms in male covid patients")
+
+ggplot(male.10.symptom, aes(x = DESCRIPTION,y = M, fill = M)) +
+  geom_bar(stat = "identity",fill = "cyan4",colour= "white") +
+  labs(title = "Top 10 symptoms in male covid patients",x = "Symptoms",
+       y = "Count") +
+  theme_bw()+coord_flip()
+  
+```
+
+The above table shows the top 10 symptoms in male covid patients and the barplot visualises it. As we can see the most commom symptom in males were fever followed by cough and taste loss. Symptoms such as hypoxemia, pneumonia and respiratory diseases were the least common with 865 each in the top 10 list. Obsesity and fatigue were also some of the common symptoms in males.
+
+```{r}
+female.10.symptom = subset(top.10.g,select = c("DESCRIPTION","F"))
+female.10.symptom = na.omit(female.10.symptom)
+kable(female.10.symptom,caption = "Top 10 symptoms in female covid patients")
+
+ggplot(female.10.symptom, aes(x = DESCRIPTION,y = F, fill = F)) +
+  geom_bar(stat = "identity",fill = "brown4",colour= "white") +
+  labs(title = "Top 10 symptoms in female covid patients",x = "Symptoms",
+       y = "Count") +
+  theme_bw()+coord_flip()
+
+```
+
+When it comes to females, same fever, cough and taste loss were common affecting around 4250,3266 and 2440 number of females respectively. Unlike men, women had some other symptoms such as miscarriage and normal pregnancy, not sure if they are symptoms but an evident number of women miscarriage and normal pregnancy. There are also some other symptoms such as hypertension and prediabetes in both men and women.
+
+**Question.3 Write the code to analyse the factors that might influence the hospitalisation rate (ambulatory,emergency, inpatient, urgent care) for the COVID patient (confirmed or suspected) in the dataset.Any factors in the dataset, such as age, gender, zip code, marital status, race and county, can be considered. Pick 2 of the factors and explain if there is a trend that explains the variation. Does this result vary between the 2 datasets?**
+
+The two factors that was chosen here for the analysis are gender and race. This analysis is conducted separate for both the datasets as we have to finally compare between both. The information about hospitalisation rate is in the encounters dataset and though there are six categories under the encounterclasss, we have only used four of them which are ambulatory, emergency, inpatient and urgentcare (as per the question). As the first step both the datsets, encounters1 and encounters2 were loaded using the 'read.csv' function.
+
+```{r}
+encounters1 = read.csv("encountersPG1.csv")
+encounters2 = read.csv("encountersPG2.csv")
 ```
 
 ```{r}
+#DATA 1
+covid.in.1 = subset(conditions1, DESCRIPTION == "COVID-19", drop = TRUE)
+suspected.in.1 = subset(conditions1,DESCRIPTION == "Suspected COVID-19"&
+                          !PATIENT %in% covid.in.1$PATIENT)
+Q4 = rbind(covid.in.1,suspected.in.1)
 
-encounters1 = read.csv("encountersPG1.csv")
-encounters2 = read.csv("encountersPG2.csv")
+#DATA 2
+covid.in.2 = subset(conditions2, DESCRIPTION == "COVID-19", drop = TRUE)
+suspected.in.2 = subset(conditions2,DESCRIPTION == "Suspected COVID-19"&
+                          !PATIENT %in% covid.in.2$PATIENT)
+Qn4 = rbind(covid.in.2,suspected.in.2)
 
 ```
+
+Before starting the analysis we created two subsets for data 1 and 2 to separate the patients with covid-19 and suspected covid-19 in both datasets. Unlike what was done for first two analysis, this time the patients were taken separate. We will need this separation for the upcoming analyses as well, that is why it is done at this point.
 
 ```{r}
 #DATA_1
-
 Q3 = encounters1%>%
   filter(PATIENT %in% Q4$PATIENT)
 Q3 = subset(Q3, select = c("PATIENT","ENCOUNTERCLASS"))
@@ -241,31 +294,42 @@ Q3.1 = subset(patients1, select = c("Id","GENDER","RACE"))
 
 Q3.2 = merge(Q3,Q3.1,by.x = "PATIENT", by.y = "Id",all = FALSE)
 
+
+```
+
+To start with the analysis, first we filtered the patient ids in the encounter1 dataset on the basis of the covid patients in the dataset 1. Then the four encounter categories were selected as the analysis is conducted for only four encounterclasses. Then from the patients 1 data, we filtered out the two factors that is gender and race for which we are conducting the evaluation. So, once the Ids, encounterclass, gender and race of the covid patients were obtained, everything was combined into a new dataset for the ease.
+
+```{r}
 gender.encounter = table(Q3.2$ENCOUNTERCLASS,Q3.2$GENDER)
 gender.encounter
-
-ggplot(Q3.2, aes(x = ENCOUNTERCLASS, fill = GENDER)) +
-  geom_bar(position = position_dodge(width = 0.9), color = "black") +
-  labs(title = "ENCOUNTERCLASS BETWEEN GENDERS") + 
-  theme_bw()+ scale_fill_manual(values = c("lightpink","skyblue"))
-
 
 prop.gender.1 = prop.table(gender.encounter,margin = 1)*100
 prop.gender.1
 
+ggplot(Q3.2, aes(x = ENCOUNTERCLASS, fill = GENDER)) +
+  geom_bar(position = position_dodge(width = 0.9), color = "white") +
+  labs(title = "ENCOUNTERCLASS BETWEEN GENDERS") + 
+  theme_bw()+ scale_fill_manual(values = c("red3","blue4"))
+
+
+```
+```{r}
 race.encounter = table(Q3.2$ENCOUNTERCLASS,Q3.2$RACE)
 race.encounter
-
-ggplot(Q3.2, aes(x = ENCOUNTERCLASS, fill = RACE)) +
-  geom_bar(position = position_dodge(width = 0.9), color = "black") +
-  labs(title = "ENCOUNTERCLASS BETWEEN RACE") + 
-  theme_bw()
-
 
 prop.race.1 = prop.table(race.encounter,margin = 1)*100
 prop.race.1
 
+ggplot(Q3.2, aes(x = ENCOUNTERCLASS, fill = RACE)) +
+  geom_bar(position = position_dodge(width = 0.9), color = "white") +
+  labs(title = "ENCOUNTERCLASS BETWEEN RACE") + 
+  theme_bw()+
+  scale_fill_manual(values = c("orange2","darkcyan","aquamarine2","darkred","red3"))
+
 ```
+
+
+
 ```{r}
 #DATA 2
 Qn3 = encounters2%>%
@@ -284,7 +348,7 @@ gender.encounter2
 ggplot(Qn3.2, aes(x = ENCOUNTERCLASS, fill = GENDER)) +
   geom_bar(position = position_dodge(width = 0.9), color = "black") +
   labs(title = "ENCOUNTERCLASS BETWEEN GENDERS") + 
-  theme_bw()+ scale_fill_manual(values = c("lightpink","skyblue"))
+  theme_bw()+ scale_fill_manual(values = c("lightpink3","skyblue"))
 
 prop.gedner.2 = prop.table(gender.encounter2,margin = 1)*100
 prop.gedner.2
@@ -304,18 +368,9 @@ prop.race.2
 
 **Question.4**
 
-
 ```{r}
 #DATA 1
-covid.in.1 = subset(conditions1, DESCRIPTION == "COVID-19", drop = TRUE)
-suspected.in.1 = subset(conditions1,DESCRIPTION == "Suspected COVID-19"&
-                          !PATIENT %in% covid.in.1$PATIENT)
-Q4 = rbind(covid.in.1,suspected.in.1)
 
-
-```
-
-```{r}
 Q4$RECOVERY.STAT = ifelse(is.na(Q4$STOP)|Q4$STOP=="", "Not_recovered", "Recovered")
 Q4$RECOVERY.TIME = as.Date(Q4$STOP)- as.Date(Q4$START)
 
@@ -325,6 +380,7 @@ Q4.table
 barplot(Q4.table,beside = TRUE,col = c("skyblue","lightpink"))
 
 ```
+
 ```{r}
 patients1$AGE = age_calculator(patients1$BIRTHDATE)
 patients1 = patients1 %>%
@@ -345,7 +401,6 @@ Q4.3 = merge(Q4,Q4.2,by.x = "PATIENT",by.y = "Id",all = FALSE)
 Q4.final = subset(Q4.3,select = c("PATIENT","GENDER","AGE","AGE.GROUP",
                               "DESCRIPTION","ZIP","RECOVERY.STAT","RECOVERY.TIME"))
 ```
-
 
 ```{r}
 
@@ -376,21 +431,13 @@ NOT.REC.FREQ.1 = subset(REC.SYM.table.1, RECOVERY.STAT == "Not_recovered" )
 
 ```{r}
 #DATA 2
-
-covid.in.2 = subset(conditions2, DESCRIPTION == "COVID-19", drop = TRUE)
-suspected.in.2 = subset(conditions2,DESCRIPTION == "Suspected COVID-19"&
-                          !PATIENT %in% covid.in.2$PATIENT)
-Qn4 = rbind(covid.in.2,suspected.in.2)
-
-```
-
-```{r}
 Qn4$RECOVERY.STAT = ifelse(is.na(Qn4$STOP)|Qn4$STOP=="", "Not_recovered", "Recovered")
 Qn4$RECOVERY.TIME = as.Date(Qn4$STOP)- as.Date(Qn4$START)
 
 Qn4.table = table(Qn4$DESCRIPTION,Qn4$RECOVERY.STAT)
 Qn4.table
 ```
+
 ```{r}
 patients2$AGE = age_calculator(patients2$BIRTHDATE)
 patients2 = patients2 %>%
@@ -435,4 +482,3 @@ names(REC.SYM.table.2) = c("SYMPTOMS","RECOVERY.STAT","FREQUENCY.OF.SYMPTOMS")
 REC.SYM.FREQ.2 = subset(REC.SYM.table.2, RECOVERY.STAT == "Recovered" )
 NOT.REC.FREQ.2 = subset(REC.SYM.table.2, RECOVERY.STAT == "Not_recovered" )
 ```
-
