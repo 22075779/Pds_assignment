@@ -8,6 +8,7 @@ output: word_document
 To start with the analysis, first the necessary libraries were called using the library function in R, there are mainly three libraries used throughout our analysis, ggplot, tidyverse and dplyr.
 
 ```{r}
+#loading the libraries
 library(ggplot2)
 library(tidyverse)
 library(dplyr)
@@ -17,7 +18,7 @@ library(knitr)
 **Question 1.Write the code to analyse the distribution of COVID patients (confirmed or suspected) across countries. Write the code to investigate the distribution of the patients across age groups (e.g., 0-18, 19-35,36-50, 51+). Visualise both the findings using the histogram. Explain your findings.**
 
 ```{r}
-
+#loading datasets 
 patients1 = read.csv("patientsPG1.csv") #to load the csv files
 patients2 = read.csv("patientsPG2.csv")
 patients = rbind(patients1,patients2)
@@ -27,7 +28,7 @@ patients = rbind(patients1,patients2)
 conditions1 = read.csv("ConditionsPG1.csv")
 conditions2 = read.csv("ConditionsPG2.csv")
 condition = rbind(conditions1,conditions2)
-conditions = subset(condition, DESCRIPTION %in% c("Suspected COVID-19","COVID-19"), drop = TRUE)#subsetting dataset based on the number of covid patients
+conditions = subset(condition, DESCRIPTION %in% c("Suspected COVID-19","COVID-19"), drop = TRUE)#subset dataset based on the number of covid patients
 ```
 
 As the task does not specifically mention to investigate the distribution in a particualar dataset, we have used the whole datasets here.
@@ -40,13 +41,13 @@ First we are analyzing the distribution of covid patients across the counties, t
 county = subset(patients, select = c("Id","COUNTY","BIRTHDATE"))
 description = subset(conditions, select = c("PATIENT","DESCRIPTION"))
 merged = merge(county,description, by.x = "Id",by.y = "PATIENT", all = FALSE)
-head(merged,5)
+#further filtering and merging
 ```
 
 From the patients dataset, as we do not need all the information, it was subsetted with information like Id, county name and birthdate because we need birthdates later for analysis. We also made an other set with just the patient id and description from the conditions and then the description of the diagnosis and county names were combined on the basis of patient id so that we can get the patients their respective counties and if they had covid or not.
 
 ```{r}
-covid = subset(merged, DESCRIPTION == "COVID-19", drop = TRUE)
+covid = subset(merged, DESCRIPTION == "COVID-19", drop = TRUE)#filtering covid and suspected
 s_covid = unique(merged$Id[!(merged$Id %in% covid$Id)])
 sus_covid = merged[!(merged$Id %in% covid$Id),]
 final = rbind(covid,sus_covid)
@@ -65,7 +66,7 @@ Q1.data  = Q1.data%>%
 
 ggplot(Q1.data, aes(x = COUNTY, y = NO.OF.PEOPLE, fill = DESCRIPTION)) +
   geom_bar(stat = "identity",position = position_dodge(0.9),color ="darkgrey") +
-  labs(title = "Suspected and Confirmed cases by Counties",x = "COUNTY",
+  labs(title = "",x = "COUNTY",
        y = "No.of.People",
        fill = "Description") +
   theme_minimal() +
@@ -78,19 +79,19 @@ The above barplot is a visualisation of covid patients and suspected covid patie
 People who were suspected but did not get affected was also highest in Middlesex with a number of 53 whereas in Dukes, every person who were suspected later turned covid positive.
 
 ```{r}
-co.county = subset(Q1.data, DESCRIPTION == "COVID-19")
-kable(co.county, caption = "COVID-19 patients across counties")
-hist(co.county$NO.OF.PEOPLE, main = "Distribution of people with Covid-19 across counties",
-     xlab = "No.of.People", col = "skyblue",border = "white")
+co.county = subset(Q1.data, DESCRIPTION == "COVID-19")#county and frquency of covid patients
+kable(co.county, caption = "COVID-19 patients across counties")#table of covid
+hist(co.county$NO.OF.PEOPLE, main = "",
+     xlab = "No.of.People", col = "skyblue",border = "white")#hist of distribution
 
 ```
 
 A table with the number of covid patients was created using the 'kable' function in R and the distribution of covid patients across counties were plotted using a histogram. There was only one county with number of patients between 2000 and 2500, six counties had 0-500 number of confirmed cases and the remaining counties had numbers between 500 to 1500.
 
 ```{r}
-sus.county = subset(Q1.data, DESCRIPTION == "Suspected COVID-19")
+sus.county = subset(Q1.data, DESCRIPTION == "Suspected COVID-19")#county with suspected case freq
 kable(sus.county, caption = "Suspected COVID-19 patients across counties")
-hist(sus.county$NO.OF.PEOPLE, main = "Distribution of people with Suspected Covid-19 across counties",
+hist(sus.county$NO.OF.PEOPLE, main = "",
      xlab = "No.of.People", col = "cyan3",border = "white")
 ```
 
@@ -99,7 +100,7 @@ The same process was carried out with the people who were just suspected. Most o
 Now we have to find the distribution of covid patients across different age group, for this we have to categorise the ages into four different groups 0-18, 19-35, 36-50 and 51 +. Since we do not have the direct ages of patients, instead we calculated it from their date of birth using a function.
 
 ```{r}
-age = subset(Q1, select = c("BIRTHDATE","DESCRIPTION"))
+age = subset(Q1, select = c("BIRTHDATE","DESCRIPTION"))#filtering birthdate for age calculation
 ```
 
 ```{r}
@@ -116,14 +117,14 @@ age_calculator = function(dob) {
   age[bday] = age[bday] - 1
   
   return(age)
-}
+}#function returning age from current date
 ```
 
 We created a function called 'age calculator' which returns the ages of patients if they were alive today. We did not stress much into the exact age of patients because we were focusing on their age groups. Some people were above 110 years old as per the calculations but we grouped them all into one category called 51+. Based on the age groups, we had four categories 0-18, 19-35, 36-50 and above 51.
 
 ```{r}
 
-age$AGE = age_calculator(age$BIRTHDATE)
+age$AGE = age_calculator(age$BIRTHDATE)#creating age categories
 age = age %>%
   mutate(Age.group = case_when(
     AGE>=0 & AGE<=18 ~ "0-18",
@@ -137,18 +138,18 @@ age = age %>%
 ```{r}
 #age = subset(age,select = c("Age.group"))
 age.table = table(age$DESCRIPTION,age$Age.group)
-age.data = as.data.frame(age.table)
+age.data = as.data.frame(age.table)#making age and description as table for ease to plot
 names(age.data) = c("DESCRIPTION","AGE.GROUP","NO.OF.PEOPLE")
 age.data  = age.data%>%
   arrange(desc(NO.OF.PEOPLE))
 
 ggplot(age.data, aes(x = AGE.GROUP, y = NO.OF.PEOPLE, fill = DESCRIPTION)) +
   geom_bar(stat = "identity",position = position_dodge(0.9),colour= "darkgrey") +
-  labs(title = "Suspected and Confirmed cases by AGE GROUP",x = "Age Groups",
+  labs(title = "",x = "Age Groups",
        y = "No.of.People",
        fill = "Description") +
   theme_bw()+
-  scale_fill_manual(values = c("aquamarine2","darkcyan"))
+  scale_fill_manual(values = c("aquamarine2","darkcyan"))#barplot using ggplot
   
 ```
 
@@ -156,24 +157,26 @@ The above barplot shows the number of people belonging two different age groups 
 
 ```{r}
 co.age = subset(age.data, DESCRIPTION == "COVID-19")
-kable(co.age, caption = "COVID-19 patients across different age groups")
-hist(co.age$NO.OF.PEOPLE, main = "Distribution of people with Covid-19 across different age groups",
-     xlab = "No.of.People", col = "aquamarine4",border = "white")
+kable(co.age, caption = "")
+hist(co.age$NO.OF.PEOPLE, main = "",
+     xlab = "No.of.People", col = "aquamarine4",border = "white")#hist of agegroup and no of people
 ```
-
+A histogram was plotted to depict the distribution of age group and people with covid. Two age groups had number of people between 1000-1500 whereas in one age group the number of people were above 3000.
 ```{r}
 sus.age = subset(age.data, DESCRIPTION == "Suspected COVID-19")
 kable(sus.age, caption = "Suspected COVID-19 patients across different age groups")
-hist(sus.age$NO.OF.PEOPLE, main = "Distribution of people who suspected Covid-19 in different age groups",
-     xlab = "No.of.People", col = "cyan3",border = "white")
+hist(sus.age$NO.OF.PEOPLE, main = "",
+     xlab = "No.of.People", col = "cyan3",border = "white")#hist of age group and suspected patients.
 ```
+
+Another histogram for the patients who were just suspected was plotted as well. It shows the highest number of people who were just suspected falls in range from 60-80 and two of the age groups had these much number of suspected patients.
 
 **Question.2 Filter those patients in the dataset that have contracted COVID-19 or Suspected COVID-19; what are the top 10 most common conditions (symptoms) related to the patients? Do the conditions differ between genders? Provide a table to rank the top 10 conditions for male and female patients separately. Elaborate on the findings.**
 
 ```{r}
-Q2 = subset(condition,select = c("PATIENT","DESCRIPTION"))
+Q2 = subset(condition,select = c("PATIENT","DESCRIPTION"))#filter patient and description
 Q2= Q2%>%
-  filter(PATIENT %in% final$Id)
+  filter(PATIENT %in% final$Id)#filter ids with covid 
 ```
 
 To find whether the symptoms related to the patients differ by gender, first we filtered the conditions and the ids from the condition datasets. Even here, we are using both datasets condition1 and condition2 because it is not specified to analyse a specific dataset.
@@ -191,7 +194,7 @@ top.12 = top.12%>%
   arrange(desc(n))
 top.10 = top.12%>%
   slice(-1,-2)
-top.10
+#top.10
 ```
 
 Then we counted the number of all symptoms and took the top 12 symptoms associated with the patients. Out of the top 12, the most occuring were covid-19 and suspected covid-19 but we did not need those two, so we removed those two numbers and created a table with the top 10 common symptoms as shown above. Fever and cough are the most common symptoms followed by taste loss, fatigue and so on.
@@ -208,32 +211,32 @@ Now we have the common symptoms but we don't know if they differ by gender, for 
 
 ```{r}
 symptom.gender = gender.des %>%
-  count(DESCRIPTION,GENDER)
+  count(DESCRIPTION,GENDER)#filtering gender and symptom
 
 top.in.gender = symptom.gender%>%
   group_by(GENDER)%>%
-  slice_max(order_by = n, n =12, with_ties = TRUE)
+  slice_max(order_by = n, n =12, with_ties = TRUE)#getting top 12 symtoms
   
-reshaped = spread(top.in.gender,GENDER,n)
+reshaped = spread(top.in.gender,GENDER,n)#shaping in a table format
 
 reshaped = reshaped%>%
   arrange(desc(c(reshaped$F)))
 
 top.10.g = reshaped%>%
-  slice(-1,-2)
+  slice(-1,-2)#removing covid 19 and suspected covid 19
 
 ```
 
 As all the symptoms were not relevant for the analysis, we took the top 10 symptoms associated with males and females.
 
 ```{r}
-male.10.symptom = subset(top.10.g,select = c("DESCRIPTION","M"))
+male.10.symptom = subset(top.10.g,select = c("DESCRIPTION","M"))#subset male symtoms
 male.10.symptom = na.omit(male.10.symptom)
-kable(male.10.symptom,caption = "Top 10 symptoms in male covid patients")
+kable(male.10.symptom,caption = "")
 
 ggplot(male.10.symptom, aes(x = DESCRIPTION,y = M, fill = M)) +
   geom_bar(stat = "identity",fill = "cyan4",colour= "white") +
-  labs(title = "Top 10 symptoms in male covid patients",x = "Symptoms",
+  labs(title = "",x = "Symptoms",
        y = "Count") +
   theme_bw()+coord_flip()
   
@@ -242,13 +245,13 @@ ggplot(male.10.symptom, aes(x = DESCRIPTION,y = M, fill = M)) +
 The above table shows the top 10 symptoms in male covid patients and the barplot visualises it. As we can see the most commom symptom in males were fever followed by cough and taste loss. Symptoms such as hypoxemia, pneumonia and respiratory diseases were the least common with 865 each in the top 10 list. Obsesity and fatigue were also some of the common symptoms in males.
 
 ```{r}
-female.10.symptom = subset(top.10.g,select = c("DESCRIPTION","F"))
+female.10.symptom = subset(top.10.g,select = c("DESCRIPTION","F"))#subset female symtoms
 female.10.symptom = na.omit(female.10.symptom)
 kable(female.10.symptom,caption = "Top 10 symptoms in female covid patients")
 
 ggplot(female.10.symptom, aes(x = DESCRIPTION,y = F, fill = F)) +
   geom_bar(stat = "identity",fill = "brown4",colour= "white") +
-  labs(title = "Top 10 symptoms in female covid patients",x = "Symptoms",
+  labs(title = "",x = "Symptoms",
        y = "Count") +
   theme_bw()+coord_flip()
 
@@ -261,39 +264,40 @@ When it comes to females, same fever, cough and taste loss were common affecting
 The two factors that was chosen here for the analysis are gender and race. This analysis is conducted separate for both the datasets as we have to finally compare between both. The information about hospitalisation rate is in the encounters dataset and though there are six categories under the encounterclasss, we have only used four of them which are ambulatory, emergency, inpatient and urgentcare (as per the question). As the first step both the datsets, encounters1 and encounters2 were loaded using the 'read.csv' function.
 
 ```{r}
-encounters1 = read.csv("encountersPG1.csv")
+encounters1 = read.csv("encountersPG1.csv")#loading the encounter data
 encounters2 = read.csv("encountersPG2.csv")
 ```
 
+
 ```{r}
-#DATA 1
+#data1
 covid.in.1 = subset(conditions1, DESCRIPTION == "COVID-19", drop = TRUE)
 suspected.in.1 = subset(conditions1,DESCRIPTION == "Suspected COVID-19"&
                           !PATIENT %in% covid.in.1$PATIENT)
-Q4 = rbind(covid.in.1,suspected.in.1)
+Q4 = rbind(covid.in.1,suspected.in.1)# filtering  covid patients in data 1
 
-#DATA 2
+#data2
 covid.in.2 = subset(conditions2, DESCRIPTION == "COVID-19", drop = TRUE)
 suspected.in.2 = subset(conditions2,DESCRIPTION == "Suspected COVID-19"&
                           !PATIENT %in% covid.in.2$PATIENT)
-Qn4 = rbind(covid.in.2,suspected.in.2)
+Qn4 = rbind(covid.in.2,suspected.in.2)#filteration in data 2
 
 ```
 
 Before starting the analysis we created two subsets for data 1 and 2 to separate the patients with covid-19 and suspected covid-19 in both datasets. Unlike what was done for first two analysis, this time the patients were taken separate. We will need this separation for the upcoming analyses as well, that is why it is done at this point.
 
+**Data 1**
+
 ```{r}
-#DATA_1
+#DATA 1
 Q3 = encounters1%>%
-  filter(PATIENT %in% Q4$PATIENT)
-Q3 = subset(Q3, select = c("PATIENT","ENCOUNTERCLASS"))
+  filter(PATIENT %in% Q4$PATIENT)#filtering id in encounter data
+Q3 = subset(Q3, select = c("PATIENT","ENCOUNTERCLASS"))#filtering encounter class
 Q3 = Q3[Q3$ENCOUNTERCLASS %in% c("ambulatory","emergency","inpatient","urgentcare"),]
 table(Q3$ENCOUNTERCLASS)
 
-Q3.1 = subset(patients1, select = c("Id","GENDER","RACE"))
-
-Q3.2 = merge(Q3,Q3.1,by.x = "PATIENT", by.y = "Id",all = FALSE)
-
+Q3.1 = subset(patients1, select = c("Id","GENDER","RACE"))#filtering id gender and race
+Q3.2 = merge(Q3,Q3.1,by.x = "PATIENT", by.y = "Id",all = FALSE)#merging all together
 
 ```
 
@@ -301,38 +305,45 @@ To start with the analysis, first we filtered the patient ids in the encounter1 
 
 ```{r}
 gender.encounter = table(Q3.2$ENCOUNTERCLASS,Q3.2$GENDER)
-gender.encounter
+gender.encounter#contigency table of gender and encounter class
 
 prop.gender.1 = prop.table(gender.encounter,margin = 1)*100
-prop.gender.1
+prop.gender.1#proportion of each gender under each class
 
 ggplot(Q3.2, aes(x = ENCOUNTERCLASS, fill = GENDER)) +
   geom_bar(position = position_dodge(width = 0.9), color = "white") +
-  labs(title = "ENCOUNTERCLASS BETWEEN GENDERS") + 
+  labs(title = "") + 
   theme_bw()+ scale_fill_manual(values = c("red3","blue4"))
 
 
 ```
+Here we are comparing the genders with different encounter classes. To understand this more easily a proportion table was created using the 'prop.table' function in R. This gives the proportion of each gender in different encounter classes. 
+
+Ambulatory services were the highest used among all, more than 15000 males and females used this services. The number of females are higher in three out of the four classes. Ambulatory, emergency, inpatient all these services were more used by women rather than mean. When it comes to urgent care, it was more used by men than women.
+
 ```{r}
 race.encounter = table(Q3.2$ENCOUNTERCLASS,Q3.2$RACE)
 race.encounter
 
 prop.race.1 = prop.table(race.encounter,margin = 1)*100
-prop.race.1
+prop.race.1#proportion of race
 
 ggplot(Q3.2, aes(x = ENCOUNTERCLASS, fill = RACE)) +
   geom_bar(position = position_dodge(width = 0.9), color = "white") +
-  labs(title = "ENCOUNTERCLASS BETWEEN RACE") + 
+  labs(title = "") + 
   theme_bw()+
   scale_fill_manual(values = c("orange2","darkcyan","aquamarine2","darkred","red3"))
 
 ```
+Another factor race, when compared with different encounter classes, whites have the highest numbers among all. With a very high significance, in all these categories, the highest numbers are people from white race. The other numbers are not even closer to the number of white people in each category.
 
+After whites, Asians and blacks have the highest usage of these services compared to the others. Though the numbers are small, they come in second and third positions in the utilization of these ambulatory, emergency, inpatient and urgentcare services.
 
+**Data 2**
 
 ```{r}
 #DATA 2
-Qn3 = encounters2%>%
+Qn3 = encounters2%>%#same processing as data 1
   filter(PATIENT %in% Qn4$PATIENT)
 Qn3 = subset(Qn3, select = c("PATIENT","ENCOUNTERCLASS"))
 Qn3 = Qn3[Qn3$ENCOUNTERCLASS %in% c("ambulatory","emergency","inpatient","urgentcare"),]
@@ -341,76 +352,142 @@ table(Qn3$ENCOUNTERCLASS)
 Qn3.1 = subset(patients2, select = c("Id","GENDER","RACE"))
 
 Qn3.2 = merge(Qn3,Qn3.1,by.x = "PATIENT", by.y = "Id",all = FALSE)
+```
+The same steps were steps and analysis were followed for the dataset 2 as well. Even in the second data, the highest users are for the ambulatory service.
 
+```{r}
 gender.encounter2 = table(Qn3.2$ENCOUNTERCLASS,Qn3.2$GENDER)
-gender.encounter2
+gender.encounter2#gende and encounter contigency
+prop.gedner.2 = prop.table(gender.encounter2,margin = 1)*100
+prop.gedner.2#proportion table 
 
 ggplot(Qn3.2, aes(x = ENCOUNTERCLASS, fill = GENDER)) +
-  geom_bar(position = position_dodge(width = 0.9), color = "black") +
-  labs(title = "ENCOUNTERCLASS BETWEEN GENDERS") + 
-  theme_bw()+ scale_fill_manual(values = c("lightpink3","skyblue"))
-
-prop.gedner.2 = prop.table(gender.encounter2,margin = 1)*100
-prop.gedner.2
-
-race.encounter2 = table(Qn3.2$ENCOUNTERCLASS,Qn3.2$RACE)
-race.encounter2
-ggplot(Qn3.2, aes(x = ENCOUNTERCLASS, fill = RACE)) +
-  geom_bar(position = position_dodge(width = 0.9), color = "black") +
-  labs(title = "ENCOUNTERCLASS BETWEEN GENDERS") + 
-  theme_bw()
-
-prop.race.2 = prop.table(race.encounter2,margin = 1)*100
-prop.race.2
+  geom_bar(position = position_dodge(width = 0.9), color = "white") +
+  labs(title = "") + 
+  theme_bw()+ scale_fill_manual(values = c("cyan4","gold2"))
 
 
 ```
+When the encounter classes were compared with the genders in the second dataset, the output result was almost similar as the first data. The proportion of women were higher than men in ambulatory, emergency and inpatient services, however the number of men who used urgent care facility is slightly higher than women.
 
-**Question.4**
+```{r}
+race.encounter2 = table(Qn3.2$ENCOUNTERCLASS,Qn3.2$RACE)
+race.encounter2#conti_table
+prop.race.2 = prop.table(race.encounter2,margin = 1)*100
+prop.race.2#prop table
 
+ggplot(Qn3.2, aes(x = ENCOUNTERCLASS, fill = RACE)) +
+  geom_bar(position = position_dodge(width = 0.9), color = "white") +
+  labs(title = "") + 
+  theme_bw()+
+  scale_fill_manual(values = c("orange2","darkcyan","aquamarine2","bisque1","coral2"))
+
+
+```
+There is no much difference among different races as well. Number of whites dominate in all the categories followed by blacks and Asians.
+
+Overall gender and race in data 1 and 2 does affect the hospitalisation rate in a similar manner. The proportion of male and female users are almost similar in all the categories, when it comes to race, it is the same as well. The whites dominate in both the dataset whereas the number of people in other races who have utilized these services is altogether 1/4 of the overall population. 
+
+**Question.4 Write the code to investigate the characteristics of patients (confirmed or suspected) who recover from COVID-19 compared to those who don’t. Consider factors such as demographics (age, gender,zip code), symptoms, and timeline of diagnosis and recovery. Analyse how these factors impact the recovery outcome. Does this result vary between the datasets? Does this result vary between the 2 datasets?**
+
+This task analyses the factors that affected the people who recovered and did not recover from covid in both the datasets. First we are working with dataset 1. For this we had the start date when the condition was recognised and the stop date which means the date when the condition was resolved (if applicable). To find whether a person recovered or not, we assigned a new column with two values "Recovered" and "Not Recovered" for the start and stop date respectively. We also found the time difference of between these dates to get time taken for recovery.
+
+**Data 1**
 ```{r}
 #DATA 1
 
-Q4$RECOVERY.STAT = ifelse(is.na(Q4$STOP)|Q4$STOP=="", "Not_recovered", "Recovered")
-Q4$RECOVERY.TIME = as.Date(Q4$STOP)- as.Date(Q4$START)
+Q4$RECOVERY.STAT = ifelse(is.na(Q4$STOP)|Q4$STOP=="", "Not_recovered", "Recovered")#classifying as recovered and not recovered
+Q4$RECOVERY.TIME = as.Date(Q4$STOP)- as.Date(Q4$START)#calculating recovery time
 
 Q4.table = table(Q4$DESCRIPTION,Q4$RECOVERY.STAT)
-Q4.table
 
-barplot(Q4.table,beside = TRUE,col = c("skyblue","lightpink"))
 
 ```
+
 
 ```{r}
 patients1$AGE = age_calculator(patients1$BIRTHDATE)
 patients1 = patients1 %>%
   mutate(AGE.GROUP = case_when(
     AGE>=0 & AGE<=18 ~ "0-18",
-    AGE>=19& AGE<=35 ~ "19-35",
+    AGE>=19& AGE<=35 ~ "19-35",#grouping age into categories
     AGE>=36& AGE<=50 ~ "36-50",
     AGE>=51 ~ "51+"
   ))
 
-Q4.1 = subset(patients1,select = c("Id","AGE","AGE.GROUP","GENDER","ZIP"))
+Q4.1 = subset(patients1,select = c("Id","AGE","AGE.GROUP","GENDER","ZIP"))#obtaining relevant fields
 
 Q4.2 = Q4.1%>%
   filter(Id %in% Q4$PATIENT)
 
-Q4.3 = merge(Q4,Q4.2,by.x = "PATIENT",by.y = "Id",all = FALSE)
+Q4.3 = merge(Q4,Q4.2,by.x = "PATIENT",by.y = "Id",all = FALSE)#merging by Id
 
 Q4.final = subset(Q4.3,select = c("PATIENT","GENDER","AGE","AGE.GROUP",
-                              "DESCRIPTION","ZIP","RECOVERY.STAT","RECOVERY.TIME"))
+                              "DESCRIPTION","ZIP","RECOVERY.STAT","RECOVERY.TIME"))#final with all required variables
 ```
+
+Here we are analysing the factors such as age, gender, zip, symptom and timeline of recovery, so we calculated the age as we did for task 2 and also filtered the gender and zip code of ids who recovered or not. 
+
+```{r}
+#AGE
+boxplot(AGE~RECOVERY.STAT ,data = Q4.final,col = "cyan4",main ="",names= c("Not Recovered","Recovered"))#boxplot of age and recovery stat
+
+```
+To check the influence of age in recovery stat, we plotted a boxplot between two. The boxplot shows that the median age of people who have recovered is around 40 and who has not recovered is nearly 80. This indicates that people who did not recover were mostly older people and most of the youth survived. So age was a critical factor in recovery.
+
+```{r}
+lm(AGE~RECOVERY.TIME,data = Q4.final)#building linear model 
+```
+We also fitted a linear model to relationship between the age of patients and their time of recovery. The intercept, 46.7165 depicts the expected age of a patient when the recovery time is zero. The coefficient for recovery time, -0.1428, implies that for each unit of increase in patient's recovery time, the age decreases by 0.1428 units. Which concludes younger patients recovery time is longer than older people or in other words older people do not recover, there are chances they might pass away in a short period.
+
+```{r}
+ggplot(Q4.final, aes(x = RECOVERY.STAT, fill = GENDER)) +
+  geom_bar(position = position_dodge(width = 0.9), color = "white") +
+  labs(title = "") + 
+  theme_bw()+ scale_fill_manual(values = c("bisque4","bisque2"))
+
+```
+Recovery stat when compared between genders in data 1, it shows that the number of females who recovered from covid is more than the number of males,the number of patients who did not recover are also mostly men.
+
+```{r}
+REC.ZIP1 = as.data.frame(table(Q4.final$RECOVERY.STAT,Q4.final$ZIP))#zip code as dataframe
+names(REC.ZIP1)= c("RECOVERY.STAT","ZIP","FREQUENCY")#giving names
+NOT.REC.ZIP1 = subset(REC.ZIP1, RECOVERY.STAT=="Not_recovered")#for not recovered
+NOT.REC.ZIP1 =NOT.REC.ZIP1%>%
+  slice_max(order_by = FREQUENCY, n =10, with_ties = TRUE)
+REC.ZIP1 = subset(REC.ZIP1,RECOVERY.STAT=="Recovered")#for recovered
+REC.ZIP1 = REC.ZIP1%>%
+  slice_max(order_by = FREQUENCY, n =10, with_ties = TRUE)#obtaining top 10
+```
+
+As we have the zip codes of patients, we can check people from which place has recovered more and not.
+
+```{r}
+ggplot(NOT.REC.ZIP1, aes(x = FREQUENCY, y = reorder(ZIP, +FREQUENCY), fill = FREQUENCY)) +
+  geom_bar(stat = "identity",fill = "coral3",colour= "white") +
+  labs(title = "",y = "ZIP") + 
+  theme_bw()+coord_flip()
+```
+A simple bargraph can explain it all, the highest number of people who did not recover from covid come from the area zip code 2155 with a number of 5 followed by 4 which is the area under zip code 2184.When we cross checked the zip code '2155' we found that it belongs to Middlesex county, which had the highest number of covid cases as per our analysis before. Norfolk county came second where 4 people not recovered from covid. 
+
+```{r}
+ggplot(REC.ZIP1, aes(x = FREQUENCY, y = reorder(ZIP, +FREQUENCY), fill = FREQUENCY)) +
+  geom_bar(stat = "identity",fill = "coral1",colour= "white") +
+  labs(title = "",y = "ZIP") + 
+  theme_bw()+coord_flip()
+```
+The highest number of people who recovered in data 1 comes under the ZIP code 2472 which is Middlesex county. They had the highest number diagnosis and recoveries. This was followed by Suffolk county.
 
 ```{r}
 
 REC.id.1 = subset(Q4, select = c("PATIENT","RECOVERY.STAT"))
+#table(REC.id.1$RECOVERY.STAT)
 SYM.1 = subset(conditions1,select = c("PATIENT","DESCRIPTION"))
 
 SYM.1 = SYM.1%>%
-  filter(PATIENT %in% REC.id.1$PATIENT)
+  filter(PATIENT %in% REC.id.1$PATIENT)#filtering id for symptoms
 
-REC.SYM.1 = merge(REC.id.1,SYM.1,by.x = "PATIENT","PATIENT",all = FALSE)
+REC.SYM.1 = merge(REC.id.1,SYM.1,by.x = "PATIENT","PATIENT",all = FALSE)#merging id by symptoms
 
 REC.SYM.table.1 = as.data.frame(table(REC.SYM.1$DESCRIPTION,REC.SYM.1$RECOVERY.STAT))
 
@@ -423,20 +500,42 @@ REC.SYM.table.1 =REC.SYM.table.1%>%
 
 names(REC.SYM.table.1) = c("SYMPTOMS","RECOVERY.STAT","FREQUENCY.OF.SYMPTOMS")
 
-REC.SYM.FREQ.1 = subset(REC.SYM.table.1, RECOVERY.STAT == "Recovered" )
-NOT.REC.FREQ.1 = subset(REC.SYM.table.1, RECOVERY.STAT == "Not_recovered" )
-
+REC.SYM.FREQ.1 = subset(REC.SYM.table.1, RECOVERY.STAT == "Recovered" )#symptoms of recovered
+NOT.REC.FREQ.1 = subset(REC.SYM.table.1, RECOVERY.STAT == "Not_recovered" )#symptos of not recovered
 
 ```
 
 ```{r}
+REC.SYM.FREQ.1 = REC.SYM.FREQ.1%>%
+  slice_max(order_by = FREQUENCY.OF.SYMPTOMS, n =10, with_ties = TRUE)#obtaining common symptoms
+ggplot(REC.SYM.FREQ.1, aes(x = FREQUENCY.OF.SYMPTOMS, y = reorder(SYMPTOMS, +FREQUENCY.OF.SYMPTOMS), fill = FREQUENCY.OF.SYMPTOMS)) +
+  geom_bar(stat = "identity",fill = "cyan4",colour= "white") +
+  labs(title = "",y = "SYMPTOMS") + 
+  theme_bw()
+  
+```
+
+```{r}
+NOT.REC.FREQ.1 = NOT.REC.FREQ.1%>%
+  slice_max(order_by = FREQUENCY.OF.SYMPTOMS, n =10, with_ties = TRUE)#symptoms for not recovered
+ggplot(NOT.REC.FREQ.1, aes(x = FREQUENCY.OF.SYMPTOMS, y = reorder(SYMPTOMS, +FREQUENCY.OF.SYMPTOMS), fill = FREQUENCY.OF.SYMPTOMS)) +
+  geom_bar(stat = "identity",fill = "bisque3",colour= "white") +
+  labs(y = "SYMPTOMS") + 
+  theme_bw()
+```
+We also filtered the top 10 symptoms associated with people who recovered and did not recover in first dataset and visualised using barplot. Fever, cough and taste loss were the common symtoms among people who recovered and conditions like sepsis, respiratory  problems, pnemonia and so on were common amomg people who did not recover. This means that people who did not recover had more complicated symptoms than people who recovered.
+
+**Data 2**
+
+```{r}
 #DATA 2
 Qn4$RECOVERY.STAT = ifelse(is.na(Qn4$STOP)|Qn4$STOP=="", "Not_recovered", "Recovered")
-Qn4$RECOVERY.TIME = as.Date(Qn4$STOP)- as.Date(Qn4$START)
+Qn4$RECOVERY.TIME = as.Date(Qn4$STOP)- as.Date(Qn4$START)#same with data 2
 
 Qn4.table = table(Qn4$DESCRIPTION,Qn4$RECOVERY.STAT)
-Qn4.table
 ```
+
+The same methods of analysis were carried out data 2.
 
 ```{r}
 patients2$AGE = age_calculator(patients2$BIRTHDATE)
@@ -458,6 +557,51 @@ Qn4.3 = merge(Qn4,Qn4.2,by.x = "PATIENT",by.y = "Id",all = FALSE)
 Qn4.final = subset(Qn4.3,select = c("PATIENT","GENDER","AGE","AGE.GROUP",
                               "DESCRIPTION","ZIP","RECOVERY.STAT","RECOVERY.TIME"))
 ```
+
+```{r}
+boxplot(AGE~RECOVERY.STAT ,data = Qn4.final,col = "aquamarine3",main ="",names= c("Not Recovered","Recovered"))
+```
+The boxplot between age and recovery stat in data 2 is kind of similar as the first one. The median age of people who did not recover lies just below 80 and the age of people who survived is around 40. 
+
+```{r}
+lm(AGE~RECOVERY.TIME,data = Qn4.final)#model for 2nd data
+```
+The model also states that for every one unit of increase in patient's recovery time, their age decreases by 0.2463. Though younger people need more time to recover, the chances of recovery is very high.
+
+```{r}
+ggplot(Qn4.final, aes(x = RECOVERY.STAT, fill = GENDER)) +
+  geom_bar(position = position_dodge(width = 0.9), color = "white") +
+  labs(title = "") + 
+  theme_bw()+ scale_fill_manual(values = c("cadetblue","gold2"))
+```
+The comparision of recovery status between genders show that, even in dataset 2, the number of females recovered more than men. Whereas the number of people who did not recover is almost the same. 
+
+```{r}
+REC.ZIP2 = as.data.frame(table(Qn4.final$RECOVERY.STAT,Qn4.final$ZIP))
+names(REC.ZIP2)= c("RECOVERY.STAT","ZIP","FREQUENCY")
+NOT.REC.ZIP2 = subset(REC.ZIP2, RECOVERY.STAT=="Not_recovered")
+NOT.REC.ZIP2 =NOT.REC.ZIP2%>%
+  slice_max(order_by = FREQUENCY, n =10, with_ties = TRUE)
+REC.ZIP2 = subset(REC.ZIP2,RECOVERY.STAT=="Recovered")
+REC.ZIP2 = REC.ZIP2%>%
+  slice_max(order_by = FREQUENCY, n =10, with_ties = TRUE)
+```
+
+```{r}
+ggplot(NOT.REC.ZIP2, aes(x = FREQUENCY, y = reorder(ZIP, +FREQUENCY), fill = FREQUENCY)) +
+  geom_bar(stat = "identity",fill = "darkolivegreen4",colour= "white") +
+  labs(title = "",y = "ZIP") + 
+  theme_bw()+coord_flip()
+```
+Highest number of patients in dataset 2 who did not recover comes under the zip code 2155 which is Middlesex county with 3 patients. All other counties reported 2 people who did not recover.
+
+```{r}
+ggplot(REC.ZIP2, aes(x = FREQUENCY, y = reorder(ZIP, +FREQUENCY), fill = FREQUENCY)) +
+  geom_bar(stat = "identity",fill = "darkolivegreen2",colour= "white") +
+  labs(title = "",y = "ZIP") + 
+  theme_bw()+coord_flip()
+```
+Middlesex county under zip 2472 leads highest number of people who recovered in dataset 2 followed by Norfolk and Plymouth county.
 
 ```{r}
 REC.id.2 = subset(Qn4, select = c("PATIENT","RECOVERY.STAT"))
@@ -482,3 +626,27 @@ names(REC.SYM.table.2) = c("SYMPTOMS","RECOVERY.STAT","FREQUENCY.OF.SYMPTOMS")
 REC.SYM.FREQ.2 = subset(REC.SYM.table.2, RECOVERY.STAT == "Recovered" )
 NOT.REC.FREQ.2 = subset(REC.SYM.table.2, RECOVERY.STAT == "Not_recovered" )
 ```
+
+```{r}
+REC.SYM.FREQ.2 = REC.SYM.FREQ.2%>%
+  slice_max(order_by = FREQUENCY.OF.SYMPTOMS, n =10, with_ties = TRUE)
+
+ggplot(REC.SYM.FREQ.2, aes(x = FREQUENCY.OF.SYMPTOMS, y = reorder(SYMPTOMS, +FREQUENCY.OF.SYMPTOMS), fill = FREQUENCY.OF.SYMPTOMS)) +
+  geom_bar(stat = "identity",fill = "cadetblue",colour= "white") +
+  labs(title = "",y = "SYMPTOMS") + 
+  theme_bw()
+```
+
+```{r}
+NOT.REC.FREQ.2 = NOT.REC.FREQ.2%>%
+  slice_max(order_by = FREQUENCY.OF.SYMPTOMS, n =10, with_ties = TRUE)
+
+ggplot(NOT.REC.FREQ.2, aes(x = FREQUENCY.OF.SYMPTOMS, y = reorder(SYMPTOMS, +FREQUENCY.OF.SYMPTOMS), fill = FREQUENCY.OF.SYMPTOMS)) +
+  geom_bar(stat = "identity",fill = "burlywood",colour= "white") +
+  labs(y = "SYMPTOMS") + 
+  theme_bw()
+```
+Symptoms associated with those who recovered in data2 is more or less the same as 1. The most common for recovered being fever and cough and for those who did not recover, it is sepsis and respiratory distress. BMI is also a crucial factor in both data.
+
+
+Overall in both the datasets, the factors affecting recovery is almost same. Though the number of observations in datset 2 is less compared to the observations in 1, the overall result appears the same. 
